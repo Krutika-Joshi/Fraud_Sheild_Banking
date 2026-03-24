@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account - Fraud Shield</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+</head>
+
+<body>
+
+<div class="bg-gradient"></div>
+
+<div class="auth-wrapper">
+
+    <div class="auth-card glass">
+
+        <div class="auth-right">
+
+            <div class="brand">
+
+                <div class="brand-logo">
+                    <i class="uil uil-shield-check"></i>
+                </div>
+
+                <div>
+                    <h1>Fraud <span>Shield</span></h1>
+                    <p>Create your secure banking account</p>
+                </div>
+
+            </div>
+
+            <h2 class="auth-title">Register</h2>
+            <!-- Name -->
+            <div class="input-group">
+
+                <label>Name</label>
+
+                <div class="input-icon">
+                    <i class="uil uil-user"></i>
+
+                    <input id="name"
+                        type="text"
+                        placeholder="Enter full name">
+                </div>
+
+            </div>
+
+
+            <!-- Email -->
+            <div class="input-group">
+
+                <label>Email</label>
+
+                <div class="input-icon">
+                    <i class="uil uil-envelope"></i>
+
+                    <input id="email"
+                        type="email"
+                        placeholder="Enter email">
+                </div>
+
+            </div>
+
+
+            <!-- Password -->
+            <div class="input-group">
+
+                <label>Password</label>
+
+                <div class="input-icon">
+                    <i class="uil uil-lock-alt"></i>
+
+                    <input id="password"
+                        type="password"
+                        placeholder="Enter password">
+                </div>
+
+            </div>
+
+
+            <button class="btn-primary" onclick="registerUser()">
+            Create Account
+            </button>
+
+
+            <p id="registerMessage"
+                class="login-hint">
+            </p>
+
+            <p class="auth-subtitle">
+                Already have an account?
+            </p>
+
+            <button class="btn-secondary"
+                    onclick="window.location.href='login.html'">
+                Back to Login
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+async function registerUser() {
+
+    let name = document.getElementById("name").value;
+    let email = document.getElementById("email").value;
+    let password = document.getElementById("password").value;
+
+    let message = document.getElementById("registerMessage");
+
+    try {
+
+        const res = await fetch(
+            "http://localhost:5000/api/auth/register",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    password: password
+                })
+            }
+        );
+
+        const data = await res.json();
+
+        if (res.ok) {
+
+            message.innerText = "Account created successfully";
+
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 1500);
+
+        } else {
+
+            message.innerText = data.message;
+
+        }
+
+    } catch (error) {
+
+        message.innerText = "Server error";
+
+    }
+
+}
+
+</script>
+</body>
+</html>

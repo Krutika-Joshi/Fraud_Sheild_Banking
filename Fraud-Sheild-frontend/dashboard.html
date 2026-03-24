@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fraud Shield - Dashboard</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet"
+    href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+
+
+<body class="dashboard-page">
+
+<div class="dashboard">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+        <h2>🛡 Fraud Shield</h2>
+
+        <ul>
+
+            <li class="active">
+            <i class="uil uil-estate"></i> Dashboard
+            </li>
+
+            <li onclick="openDeposit()">
+            <i class="uil uil-money-insert"></i> Deposit
+            </li>
+
+            <li onclick="openWithdraw()">
+            <i class="uil uil-money-withdraw"></i> Withdraw
+            </li>
+
+           <li onclick="openQR()">
+                <i class="uil uil-qrcode"></i>
+                <span>My QR</span>
+            </li>
+
+            <li onclick="openScanner()">
+                <i class="uil uil-qrcode-scan"></i>
+                <span>Scan QR</span>
+            </li>
+
+
+            <li onclick="window.location.href='transaction.html'">
+            <i class="uil uil-exchange"></i> Transactions
+            </li>
+
+            <li onclick="logout()">
+            <i class="uil uil-signout"></i> Logout
+            </li>
+
+            </ul>
+
+    </div>
+
+
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+       <div class="top-bar">
+
+            <div class="welcome-section">
+                <h1>Welcome, <span id="userName">User</span> 👋</h1>
+            </div>
+
+            <div class="account-status">
+                Status: <span id="accountStatus">Loading...</span>
+            </div>
+
+            <div id="fraudWarning" class="fraud-warning" style="display:none;">
+            ⚠ Account temporarily restricted due to suspicious activity
+            </div>
+
+        </div>
+
+
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+
+            <!-- Account Balance -->
+            <div class="stat-card purple">
+                <i class="uil uil-wallet"></i>
+                <h3 id="accountBalance">₹0</h3>
+                <p>Account Balance</p>
+            </div>
+
+            <div class="stat-card yellow">
+                <i class="uil uil-shield-check"></i>
+                <h3 id="riskLevel">LOW</h3>
+                <p>Fraud Risk Level</p>
+            </div>
+
+            <!-- Fraud Score -->
+            <div class="stat-card red">
+                <i class="uil uil-shield-exclamation"></i>
+                <h3 id="fraudScore">0</h3>
+                <p>Fraud Alerts</p>
+            </div>
+
+            <div class="stat-card blue">
+                <i class="uil uil-transaction"></i>
+                <h3 id="totalTx">0</h3>
+                <p>Total Transactions</p>
+            </div>
+
+            <div class="stat-card green">
+                <i class="uil uil-check-circle"></i>
+                <h3 id="approvedTx">0</h3>
+                <p>Approved</p>
+            </div>
+
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="container">
+
+            <div class="card">
+
+                <h3>🚨 Fraud Alerts</h3>
+
+                <div id="fraudAlerts">
+
+                    <p class="login-hint">
+                        No suspicious activity detected
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="card">
+
+                
+            </div>
+
+        </div>
+
+        
+        <!-- Transaction History -->
+        <div class="container">
+
+            <div class="card">
+
+                <h3>Transaction History</h3>
+
+                <table class="table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="historyTable"></tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+    </div>
+</div>
+
+
+
+
+
+<div id="depositModal" class="modal">
+
+<div class="modal-content">
+
+<h3>Deposit Money</h3>
+
+<input 
+type="number"
+id="depositAmount"
+placeholder="Enter amount">
+
+<div class="modal-buttons">
+
+<button class="btn-primary" onclick="depositMoney()">
+Deposit
+</button>
+
+<button class="btn-secondary" onclick="closeDeposit()">
+Cancel
+</button>
+
+</div>
+
+<p id="depositMessage" class="login-hint"></p>
+
+</div>
+
+</div>
+
+
+<div id="withdrawModal" class="modal">
+
+    <div class="modal-content">
+
+        <h3>Withdraw Money</h3>
+
+        <input
+            type="number"
+            id="withdrawAmount"
+            placeholder="Enter amount">
+
+        <div class="modal-buttons">
+
+            <button class="btn-primary" onclick="withdrawMoney()">
+                Withdraw
+            </button>
+
+            <button class="btn-secondary" onclick="closeWithdraw()">
+                Cancel
+            </button>
+
+        </div>
+
+        <p id="withdrawMessage" class="login-hint"></p>
+
+    </div>
+
+</div>
+
+<div id="qrModal" class="modal">
+
+<div class="modal-content">
+
+<h3>Your Payment QR</h3>
+
+<p style="text-align:center;color:#666;font-size:14px;">
+Scan this QR to send payment
+</p>
+
+<img id="qrImage" style="width:200px;margin:15px auto;display:block;">
+
+<div class="modal-buttons">
+
+<button class="btn-secondary" onclick="closeQR()">Close</button>
+
+</div>
+
+</div>
+
+</div>
+
+<div id="scanModal" class="modal">
+
+<div class="modal-content">
+
+<h3>Scan QR Code</h3>
+
+<div id="reader" style="width:300px"></div>
+
+<button class="btn-secondary" onclick="closeScanner()">Close</button>
+
+<p id="scanResult"></p>
+
+</div>
+
+</div>
+<div id="paymentModal" class="modal">
+
+<div class="modal-content">
+
+<h3>Transaction</h3>
+
+<p id="receiverName"></p>
+<p id="receiverAccount"></p>
+
+<select id="transactionType" class="dropdown">
+<option value="deposit">Deposit</option>
+<option value="withdraw">Withdraw</option>
+</select>
+
+<input
+type="number"
+id="paymentAmount"
+placeholder="Enter amount">
+
+<div class="modal-buttons">
+
+<button class="btn-primary" onclick="processTransaction()">
+Confirm
+</button>
+
+<button class="btn-secondary" onclick="closePayment()">
+Cancel
+</button>
+
+</div>
+
+<p id="paymentMessage"></p>
+
+</div>
+</div>
+
+
+<script src="script.js"></script>
+</body>
+</html>

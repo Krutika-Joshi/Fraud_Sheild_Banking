@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Fraud Shield - Secure Banking</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+</head>
+
+
+<body>
+
+<div class="bg-gradient"></div>
+
+<div class="auth-wrapper">
+
+    <div class="auth-card glass">
+
+        <!-- Left Illustration -->
+        <div class="auth-left">
+            <img src="https://img.freepik.com/free-vector/secure-payment-concept-illustration_114360-5847.jpg"
+                 class="hero-img">
+        </div>
+
+
+        <!-- Right Login Section -->
+        <div class="auth-right">
+
+            <!-- Brand -->
+            <div class="brand">
+
+                <div class="brand-logo">
+                    <i class="uil uil-shield-check"></i>
+                </div>
+
+                <div>
+                    <h1>Fraud <span>Shield</span></h1>
+                    <p id="roleText">User Access Portal</p>
+                </div>
+
+            </div>
+
+
+            <h2 class="auth-title">Secure Login</h2>
+
+
+            <!-- Email -->
+            <div class="input-group">
+
+                <label>Email</label>
+
+                <div class="input-icon">
+                    <i class="uil uil-user"></i>
+
+                    <input id="user"
+                           type="email"
+                           placeholder="Enter email">
+                </div>
+
+            </div>
+
+
+            <!-- Password -->
+            <div class="input-group">
+
+                <label>Password</label>
+
+                <div class="input-icon">
+                    <i class="uil uil-lock-alt"></i>
+
+                    <input id="pass"
+                           type="password"
+                           placeholder="Enter password">
+                </div>
+
+            </div>
+
+
+            <!-- Login Button -->
+            <button class="btn-primary"
+                    onclick="loginUser()">
+                Login
+            </button>
+
+
+            <p class="login-hint"
+               id="loginMessage">
+            </p>
+
+
+            <!-- Register Section -->
+            <div class="register-section">
+
+                <p class="auth-subtitle">
+                    Don't have an account?
+                </p>
+
+                <button class="btn-secondary"
+                        onclick="window.location.href='register.html'">
+                    Create Account
+                </button>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<script src="script.js"></script>
+
+</body>
+</html>

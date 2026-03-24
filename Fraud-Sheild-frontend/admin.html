@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="dashboard">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>🛡 Fraud Shield</h2>
+        <ul>
+
+            <li class="active">
+                <i class="uil uil-shield-check"></i> Admin
+            </li>
+            
+
+            <li onclick="logout()">
+                <i class="uil uil-signout"></i> Logout
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <div class="top-bar">
+            <h1>AI Fraud Monitoring Panel 🛡️</h1>
+        </div>
+
+        <div class="container">
+
+            <!-- Flagged Table -->
+            <div class="card">
+                <h3>Flagged Transactions</h3>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Risk Level</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionTable"></tbody>
+                </table>
+            </div>
+
+            <!-- Pie Chart -->
+            <div class="card">
+                <h3>Fraud Analytics Overview</h3>
+                <canvas id="fraudChart"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script src="script.js"></script>
+
+<script>
+async function loadAdmin() {
+
+    const token = localStorage.getItem("token");
+
+    const table = document.getElementById("transactionTable");
+    table.innerHTML = "";
+
+    try {
+
+        const res = await fetch("http://localhost:5000/api/fraud/alerts", {
+            headers: {
+                Authorization: "Bearer " + token
+            }
+        });
+
+        const data = await res.json();
+
+        data.forEach(tx => {
+
+            const user = tx.accountId.userId.name;
+            const amount = tx.amount;
+            const status = tx.status;
+            const id = tx._id;
+
+            let riskColor = "#e74a3b";
+
+            table.innerHTML += `
+            <tr>
+                <td>${id}</td>
+                <td>${user}</td>
+                <td>₹${amount}</td>
+                <td style="color:${riskColor}; font-weight:600;">
+                    High
+                </td>
+                <td>${status}</td>
+                <td>
+                ${status === "flagged" ? `
+                <button onclick="reviewTransaction('${id}','approve')">Approve</button>
+                <button onclick="reviewTransaction('${id}','reject')">Reject</button>
+                ` : "-"}
+                </td>
+            </tr>
+            `;
+        });
+
+    } catch (error) {
+
+        console.log("Error loading fraud alerts");
+
+    }
+
+}
+
+loadAdmin();
+
+async function loadFraudAnalytics() {
+
+    const token = localStorage.getItem("token");
+
+    try {
+
+        const res = await fetch(
+            "http://localhost:5000/api/fraud/monthly-report",
+            {
+                headers: {
+                    Authorization: "Bearer " + token
+                }
+            }
+        );
+
+        const data = await res.json();
+
+        const total = data.totalTransactions;
+        const fraud = data.fraudTransactions;
+        const safe = total - fraud;
+
+        new Chart(document.getElementById("fraudChart"), {
+            type: 'pie',
+            data: {
+                labels: ["Safe Transactions", "Fraud Transactions"],
+                datasets: [{
+                    data: [safe, fraud],
+                    backgroundColor: ["#1cc88a", "#e74a3b"]
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+    } catch (error) {
+
+        console.log("Error loading fraud analytics");
+
+    }
+
+}
+
+async function reviewTransaction(transactionId, action) {
+
+    const token = localStorage.getItem("token");
+
+    try {
+
+        const res = await fetch(
+            `http://localhost:5000/api/fraud/review-transaction/${transactionId}`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token
+                },
+                body: JSON.stringify({
+                    action: action
+                })
+            }
+        );
+
+        const data = await res.json();
+
+        alert(data.message);
+
+        // reload table after action
+        loadAdmin();
+
+    } catch (error) {
+
+        alert("Error reviewing transaction");
+
+    }
+}
+
+loadFraudAnalytics();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Make Transaction</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<div class="dashboard">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>🛡 Fraud Shield</h2>
+        <ul>
+            <li onclick="window.location.href='dashboard.html'">
+                <i class="uil uil-estate"></i> Dashboard
+            </li>
+
+            <li class="active">
+                <i class="uil uil-exchange"></i> Transactions
+            </li>
+
+
+            <li onclick="logout()">
+                <i class="uil uil-signout"></i> Logout
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <div class="top-bar">
+            <h1>Make Transaction 💳</h1>
+        </div>
+
+        <div class="container">
+
+            <div class="card">
+                <h3>Transfer Money</h3>
+
+                <input type="text" id="account" placeholder="Receiver Account Number">
+                <input type="number" id="amount" placeholder="Amount">
+
+                <select id="method">
+                    <option value="">Select Payment Method</option>
+                    <option value="UPI">UPI</option>
+                    <option value="NEFT">NEFT</option>
+                    <option value="IMPS">IMPS</option>
+                </select>
+
+                <button onclick="submitTransaction()">Submit</button>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
