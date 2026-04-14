@@ -252,7 +252,7 @@ let riskScore = 0;
 
 try {
     const mlResponse = await axios.post(
-        "https://YOUR-ML-URL.onrender.com/predict", // change later
+        "https://fraud-ml-api-32sa.onrender.com/predict", // change later
         {
             amount: amount,
             isNewIP: 0, // you can improve later
