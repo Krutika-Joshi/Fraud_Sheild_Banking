@@ -247,21 +247,33 @@ const withdrawMoney = async (req, res) => {
       createdAt: { $gte: thirtySecondsAgo }
     });
 
-     //  ML FRAUD DETECTION
-    // const mlResponse = await axios.post(
-    //   "http://localhost:8000/predict",
-    //   {
-    //     amount: amount,
-    //     isNewIP: isSuspiciousIP,
-    //     transactionCount: rapidTransactions.length,
-    //     timeGap: 10
-    //   }
-    // );
+     let fraud = false;
+let riskScore = 0;
 
-    // const { fraud, riskScore } = mlResponse.data;
+try {
+    const mlResponse = await axios.post(
+        "https://YOUR-ML-URL.onrender.com/predict", // change later
+        {
+            amount: amount,
+            isNewIP: 0, // you can improve later
+            transactionCount: 5,
+            timeGap: 10
+        }
+    );
 
-    let fraud = false; // temporary for deployment
-    let riskScore = 0.1;
+    fraud = mlResponse.data.fraud;
+    riskScore = mlResponse.data.riskScore;
+
+} catch (error) {
+    console.log("ML API failed:", error.message);
+
+    // fallback (IMPORTANT)
+    fraud = false;
+    riskScore = 0.2;
+}
+
+    // let fraud = false; // temporary for deployment
+    // let riskScore = 0.1;
 
     // final decision
     if (fraud || riskScore > 0.7) {

@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import joblib
+import os
 
 app = Flask(__name__)
 
@@ -12,11 +13,11 @@ def predict():
 
     # Extract features
     features = [
-        data["amount"],
-        int(data["isNewIP"]),
-        data["transactionCount"],
-        data["timeGap"]
-    ]
+    data.get("amount", 0),
+    int(data.get("isNewIP", 0)),
+    data.get("transactionCount", 0),
+    data.get("timeGap", 0)
+]
 
     # Prediction
     prediction = model.predict([features])[0]
@@ -28,4 +29,5 @@ def predict():
     })
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port)
