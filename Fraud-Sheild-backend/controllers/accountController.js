@@ -1,3 +1,4 @@
+const axios = require("axios");
 const Account = require("../models/Account");
 const Transaction = require("../models/Transaction");
 const sendFraudAlertEmail = require("../utils/emailService");
@@ -146,17 +147,27 @@ const withdrawMoney = async (req, res) => {
     }
 
     // check location mismatch
+    // const currentIP = req.ip;
+
+    // const user = await require("../models/User").findById(userId);
+
+    // if (user.lastLoginIP && user.lastLoginIP !== currentIP) {
+    //   account.status = "frozen";
+    //   await account.save();
+
+    //   return res.status(403).json({
+    //     message: "Location mismatch detected. Account frozen."
+    //   });
+    // }
+
     const currentIP = req.ip;
 
     const user = await require("../models/User").findById(userId);
+    
+    let isSuspiciousIP = false;
 
     if (user.lastLoginIP && user.lastLoginIP !== currentIP) {
-      account.status = "frozen";
-      await account.save();
-
-      return res.status(403).json({
-        message: "Location mismatch detected. Account frozen."
-      });
+      isSuspiciousIP = true;
     }
 
     // calculate today's withdrawals
@@ -206,23 +217,26 @@ const withdrawMoney = async (req, res) => {
     
     // fraud rule
     let status = "success";
+    // if (isSuspiciousIP && status !== "flagged") {
+    //   status = "flagged";
+    // }
 
-    // single large withdrawal
-    if (amount > 50000) {
-    status = "flagged";
+    // // single large withdrawal
+    // if (amount > 50000) {
+    // status = "flagged";
 
-    // freeze account if suspicious activity detected
-    account.status = "frozen";
-    }
+    // // freeze account if suspicious activity detected
+    // account.status = "frozen";
+    // }
 
 
-    // daily withdrawal limit rule
-    if (totalWithdrawnToday + amount > 50000) {
-      status = "flagged";
+    // // daily withdrawal limit rule
+    // if (totalWithdrawnToday + amount > 50000) {
+    //   status = "flagged";
 
-      // freeze account for suspicious activity
-      account.status = "frozen";
-    }
+    //   // freeze account for suspicious activity
+    //   account.status = "frozen";
+    // }
 
     // rapid transaction detection (3 withdrawals in 30 seconds)
     const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
@@ -233,23 +247,43 @@ const withdrawMoney = async (req, res) => {
       createdAt: { $gte: thirtySecondsAgo }
     });
 
-    if (rapidTransactions.length >= 3) {
-      status = "flagged";
+     //  ML FRAUD DETECTION
+    const mlResponse = await axios.post(
+      "http://localhost:8000/predict",
+      {
+        amount: amount,
+        isNewIP: isSuspiciousIP,
+        transactionCount: rapidTransactions.length,
+        timeGap: 10
+      }
+    );
 
-      // freeze account for suspicious activity
+    const { fraud, riskScore } = mlResponse.data;
+
+    // final decision
+    if (fraud || riskScore > 0.7) {
+      status = "flagged";
       account.status = "frozen";
     }
+
+    // if (rapidTransactions.length >= 3) {
+    //   status = "flagged";
+
+    //   // freeze account for suspicious activity
+    //   account.status = "frozen";
+    // }
 
 
     // save account changes
     await account.save();
 
     // record transaction
-    const transaction = new Transaction({
+   const transaction = new Transaction({
       accountId: account._id,
       type: "withdraw",
       amount,
-      status
+      status,
+      riskScore
     });
 
     await transaction.save();
@@ -264,6 +298,9 @@ const withdrawMoney = async (req, res) => {
       );
 
     }
+
+    user.lastLoginIP = currentIP;
+    await user.save();
 
     res.json({
       message: "Withdrawal successful",
@@ -414,6 +451,117 @@ const verifyQR = async (req, res) => {
 
 };
 
+const transferMoney = async (req, res) => {
+  try {
+    const senderId = req.user.id;
+    const { accountNumber } = req.body;
+    const amount = Number(req.body.amount);
+
+    if (!accountNumber || !amount) {
+      return res.status(400).json({
+        message: "Account number and amount required"
+      });
+    }
+
+    if (amount <= 0) {
+      return res.status(400).json({
+        message: "Invalid amount"
+      });
+    }
+
+    // sender account
+    const senderAccount = await Account.findOne({ userId: senderId });
+
+    if (!senderAccount) {
+      return res.status(404).json({
+        message: "Sender account not found"
+      });
+    }
+
+    // receiver account (from QR)
+    const receiverAccount = await Account.findOne({ accountNumber });
+
+    if (!receiverAccount) {
+      return res.status(404).json({
+        message: "Receiver account not found"
+      });
+    }
+
+    if (senderAccount.accountNumber === accountNumber) {
+      return res.status(400).json({
+        message: "Cannot send money to yourself"
+      });
+    }
+
+    if (isNaN(amount) || amount <= 0) {
+      return res.status(400).json({
+        message: "Invalid amount"
+      });
+    }
+    if (senderAccount.balance < amount) {
+      return res.status(400).json({
+        message: "Insufficient balance"
+      });
+    }
+
+    // 💸 TRANSFER
+    senderAccount.balance -= amount;
+    receiverAccount.balance += amount;
+
+    await senderAccount.save();
+    await receiverAccount.save();
+
+    // save transactions
+    await Transaction.create({
+      accountId: senderAccount._id,
+      type: "transfer",
+      amount,
+      status: "success"
+    });
+
+    res.json({
+      message: "Money transferred successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await require("../models/User")
+      .findById(userId)
+      .select("-password");
+
+    const account = await Account.findOne({ userId });
+
+    if (!account) {
+      return res.status(404).json({
+        message: "Account not found"
+      });
+    }
+
+    console.log("USER ID:", req.user.id);
+    console.log("ACCOUNT:", account);
+
+    res.json({
+      name: user.name,
+      email: user.email,
+      accountNumber: account.accountNumber,
+      balance: account.balance,
+      status: account.status
+    });
+
+    
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = { createAccount, 
                     getBalance, 
                     depositMoney, 
@@ -421,4 +569,6 @@ module.exports = { createAccount,
                     getTransactionHistory, 
                     generateQR, 
                     getAccountStatus,
-                    verifyQR };
+                    verifyQR,
+                    transferMoney,
+                    getProfile};

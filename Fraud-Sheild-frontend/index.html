@@ -83,12 +83,7 @@ const token = localStorage.getItem("token");
 
 setTimeout(()=>{
 
-    if(token){
-        window.location.href="dashboard.html";
-    }
-    else{
-        window.location.href="login.html";
-    }
+    window.location.href = "login.html";
 
 },800);
 

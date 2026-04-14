@@ -1,15 +1,19 @@
 let scanner;
+let receiverAccountNumber = "";
 /* ---------------- AUTH CHECK ---------------- */
 
-const token = localStorage.getItem("token");
+const token = sessionStorage.getItem("token");
 
-if (!token) {
+const currentPage = window.location.pathname;
+
+// Only protect dashboard page
+if (!token && !window.location.pathname.includes("login.html")) {
     window.location.href = "login.html";
 }
 /* ---------------- LOGOUT ---------------- */
 
 function logout() {
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
     window.location.href = "login.html";
 }
 
@@ -48,7 +52,7 @@ async function loginUser() {
 
         if (res.ok) {
 
-            localStorage.setItem("token", data.accessToken || data.token);
+            sessionStorage.setItem("token", data.accessToken || data.token);
 
             message.innerText = "Login successful";
 
@@ -75,7 +79,51 @@ async function loginUser() {
     }
 
 }
+async function loadProfile() {
+    try {
+        const res = await fetch(
+            "http://localhost:5000/api/account/profile",
+            {
+                headers: {
+                    Authorization: "Bearer " + token
+                }
+            }
+        );
+        if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+        }
 
+        const data = await res.json();
+
+        if (res.ok) {
+            // sidebar name
+            document.getElementById("sidebarName").innerText = data.name;
+            document.getElementById("userName").innerText = data.name;
+
+            // modal data
+            document.getElementById("name").innerText = data.name;
+            document.getElementById("email").innerText = data.email;
+            document.getElementById("accountNumber").innerText = data.accountNumber;
+            document.getElementById("balance").innerText = "₹" + data.balance;
+            document.getElementById("profileStatus").innerText = data.status;
+        }
+
+        console.log("PROFILE DATA:", data);
+
+    } catch (error) {
+        console.log("Profile fetch error", error);
+    }
+}
+
+function openProfile() {
+    document.getElementById("profileModal").style.display = "flex";
+}
+
+function closeProfile() {
+    document.getElementById("profileModal").style.display = "none";
+}
 /* ---------------- MODAL CONTROLS ---------------- */
 
 function openDeposit() {
@@ -107,6 +155,11 @@ async function openQR() {
                 }
             }
         );
+        if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+        }
 
         const data = await res.json();
 
@@ -150,6 +203,10 @@ async function openScanner() {
 
     document.getElementById("scanResult").innerText = "";
 
+    document.getElementById("sendBtn").disabled = true;
+
+    
+
     document.getElementById("scanModal").style.display = "flex";
 
     scanner = new Html5Qrcode("reader");
@@ -165,13 +222,38 @@ async function openScanner() {
 
             try {
 
-                let data;
+              let data;
+
                 try {
                     data = JSON.parse(qrCodeMessage);
                 } catch (e) {
-                    data = { accountNumber: qrCodeMessage };
                     console.log("QR parse error:", qrCodeMessage);
-                    document.getElementById("scanResult").innerText = "Invalid QR format";
+
+                    document.getElementById("scanResult").innerText =
+                        "Invalid QR format";
+
+                    if (scanner) {
+                        try {
+                            await scanner.stop();
+                        } catch (e) {
+                            console.log("Scanner already stopped");
+                        }
+                    }
+
+                    return;
+                }
+
+                
+                if (!data.accountNumber) {
+                    document.getElementById("scanResult").innerText =
+                        "Invalid QR data";
+                    if (scanner) {
+                        try {
+                            await scanner.stop();
+                        } catch (e) {
+                            console.log("Scanner already stopped");
+                        }
+                    } 
                     return;
                 }
 
@@ -191,10 +273,10 @@ async function openScanner() {
 
                 const result = await res.json();
 
-                if (result.status === "safe") {
+               if (result.status === "safe") {
+                
 
                     document.getElementById("scanModal").style.display = "none";
-
                     document.getElementById("paymentModal").style.display = "flex";
 
                     document.getElementById("receiverName").innerText =
@@ -203,13 +285,58 @@ async function openScanner() {
                     document.getElementById("receiverAccount").innerText =
                         "Account Number: " + result.accountNumber;
 
-                } else {
+                    document.getElementById("paymentMessage").innerText = "";
+
+                    receiverAccountNumber = result.accountNumber;
+
+                    document.getElementById("sendBtn").disabled = false;
+
+                }
+
+                // ⚠ suspicious account
+               else if (result.status === "suspicious") {
+
+                document.getElementById("scanModal").style.display = "none";
+                document.getElementById("paymentModal").style.display = "flex";
+
+                document.getElementById("receiverName").innerText =
+                    "⚠ Suspicious Account";
+
+                document.getElementById("receiverAccount").innerText =
+                    "Account Number: " + (result.accountNumber || "Hidden");
+
+                document.getElementById("paymentMessage").innerText =
+                    result.message;
+
+                document.getElementById("paymentMessage").style.color = "orange";
+
+                receiverAccountNumber = result.accountNumber || "";
+
+                document.getElementById("sendBtn").disabled = false;
+            }
+
+                //  fraud / blacklisted
+                else if (result.status === "fraud") {
+
+                    document.getElementById("scanResult").innerText =
+                        " Transaction blocked: " + result.message;
+
+                }
+
+                //  invalid QR
+                else {
 
                     document.getElementById("scanResult").innerText = result.message;
 
                 }
 
-                scanner.stop();
+                if (scanner) {
+                    try {
+                        await scanner.stop();
+                    } catch (e) {
+                        console.log("Scanner already stopped");
+                    }
+                }
 
             } catch (error) {
 
@@ -236,60 +363,60 @@ function closeScanner() {
 
 }
 
-async function processTransaction(){
+// async function processTransaction(){
 
-const amount = document.getElementById("paymentAmount").value;
-const type = document.getElementById("transactionType").value;
+// const amount = document.getElementById("paymentAmount").value;
+// // const type = document.getElementById("transactionType").value;
 
-if(!amount || amount <= 0){
-document.getElementById("paymentMessage").innerText = "Enter valid amount";
-return;
-}
+// if(!amount || amount <= 0){
+// document.getElementById("paymentMessage").innerText = "Enter valid amount";
+// return;
+// }
 
-let url = "";
+// let url = "";
 
-if(type === "deposit"){
-url = "http://localhost:5000/api/account/deposit";
-}
-else{
-url = "http://localhost:5000/api/account/withdraw";
-}
+// if(type === "deposit"){
+// url = "http://localhost:5000/api/account/deposit";
+// }
+// else{
+// url = "http://localhost:5000/api/account/withdraw";
+// }
 
-try{
+// try{
 
-const res = await fetch(
-url,
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-Authorization:"Bearer "+token
-},
-body:JSON.stringify({
-amount:Number(amount)
-})
-}
-);
+// const res = await fetch(
+// url,
+// {
+// method:"POST",
+// headers:{
+// "Content-Type":"application/json",
+// Authorization:"Bearer "+token
+// },
+// body:JSON.stringify({
+// amount:Number(amount)
+// })
+// }
+// );
 
-const data = await res.json();
+// const data = await res.json();
 
-document.getElementById("paymentMessage").innerText = data.message;
+// document.getElementById("paymentMessage").innerText = data.message;
 
-setTimeout(()=>{
+// setTimeout(()=>{
 
-closePayment();
-loadAccountBalance();
-loadTransactionHistory();
+// closePayment();
+// loadAccountBalance();
+// loadTransactionHistory();
 
-},1500);
+// },1500);
 
-}catch(error){
+// }catch(error){
 
-document.getElementById("paymentMessage").innerText="Transaction failed";
+// document.getElementById("paymentMessage").innerText="Transaction failed";
 
-}
+// }
 
-}
+// }
 
 function closePayment(){
 
@@ -297,7 +424,7 @@ document.getElementById("paymentModal").style.display="none";
 
 document.getElementById("paymentAmount").value="";
 document.getElementById("paymentMessage").innerText="";
-document.getElementById("transactionType").value="deposit";
+// document.getElementById("transactionType").value="deposit";
 
 }
 /* ---------------- LOAD USER INFO ---------------- */
@@ -314,6 +441,12 @@ async function loadUserInfo() {
                 }
             }
         );
+
+        if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+        }
 
         const data = await res.json();
 
@@ -342,6 +475,11 @@ async function loadAccountBalance() {
                 }
             }
         );
+        if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+        }
 
         const data = await res.json();
 
@@ -378,6 +516,11 @@ async function loadTransactionHistory() {
                 }
             }
         );
+        if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+        }
 
         const data = await res.json();
 
@@ -421,47 +564,7 @@ async function loadTransactionHistory() {
 
         const warning = document.getElementById("fraudWarning");
 
-        async function loadAccountStatus() {
-
-    try {
-
-        const res = await fetch(
-            "http://localhost:5000/api/account/status",
-            {
-                headers: {
-                    Authorization: "Bearer " + token
-                }
-            }
-        );
-
-        const data = await res.json();
-
-        const statusElement = document.getElementById("accountStatus");
-        const warning = document.getElementById("fraudWarning");
-
-        if (data.status === "frozen") {
-
-            statusElement.innerText = "FROZEN 🔴";
-            statusElement.style.color = "red";
-
-            warning.style.display = "block";
-
-        } else {
-
-            statusElement.innerText = "ACTIVE 🟢";
-            statusElement.style.color = "green";
-
-            warning.style.display = "none";
-
-        }
-
-    } catch (error) {
-
-        console.log("Status fetch error");
-
-    }
-
-}
+    
 
     } catch (error) {
 
@@ -486,6 +589,11 @@ async function loadFraudAlerts() {
                 }
             }
         );
+                if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+        }
 
         const data = await res.json();
 
@@ -543,6 +651,11 @@ async function loadAccountStatus() {
                 }
             }
         );
+        if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+        }
 
         const data = await res.json();
 
@@ -697,6 +810,11 @@ async function createAccountIfNeeded(){
                 }
             }
         );
+        if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+        }
 
         if(res.status === 400){
             console.log("Account already exists");
@@ -708,7 +826,83 @@ async function createAccountIfNeeded(){
 
 }
 
+async function sendMoney() {
+
+    const amount = Number(document.getElementById("paymentAmount").value);
+
+    // ✅ check receiver
+    if (!receiverAccountNumber || receiverAccountNumber.trim() === "") {
+        document.getElementById("paymentMessage").innerText = "Invalid receiver";
+        document.getElementById("paymentMessage").style.color = "red";
+        return;
+    }
+
+    // ✅ check amount
+    if (!amount || amount <= 0) {
+        document.getElementById("paymentMessage").innerText = "Enter valid amount";
+        document.getElementById("paymentMessage").style.color = "orange";
+        return;
+    }
+
+    // ✅ confirmation
+    if (!confirm(`Send ₹${amount} to this account?`)) {
+        return;
+    }
+
+    // ⏳ loading
+    document.getElementById("paymentMessage").innerText = "Processing...";
+    document.getElementById("paymentMessage").style.color = "black";
+
+    try {
+
+        const res = await fetch(
+            "http://localhost:5000/api/account/transfer",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token
+                },
+                body: JSON.stringify({
+                    accountNumber: receiverAccountNumber,
+                    amount: amount
+                })
+            }
+        );
+        if (res.status === 401) {
+            sessionStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+        }
+
+        const data = await res.json();
+
+        // ✅ success
+        if (res.ok) {
+            document.getElementById("paymentMessage").innerText = data.message;
+            document.getElementById("paymentMessage").style.color = "green";
+        } else {
+            document.getElementById("paymentMessage").innerText = data.message;
+            document.getElementById("paymentMessage").style.color = "red";
+        }
+
+        setTimeout(() => {
+            closePayment();
+            loadAccountBalance();
+            loadTransactionHistory();
+        }, 1500);
+
+    } catch (error) {
+
+        console.log("TRANSFER ERROR:", error);
+
+        document.getElementById("paymentMessage").innerText = "Payment failed";
+        document.getElementById("paymentMessage").style.color = "red";
+    }
+}
+
 /* ---------------- INIT ---------------- */
+
 async function init(){
 
     await createAccountIfNeeded();
@@ -718,7 +912,8 @@ async function init(){
     loadTransactionHistory();
     loadFraudAlerts();
     loadAccountStatus();
-
+    loadProfile();
 }
-
-init();
+if (window.location.pathname.includes("dashboard.html")) {
+    init();
+}
