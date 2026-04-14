@@ -248,17 +248,20 @@ const withdrawMoney = async (req, res) => {
     });
 
      //  ML FRAUD DETECTION
-    const mlResponse = await axios.post(
-      "http://localhost:8000/predict",
-      {
-        amount: amount,
-        isNewIP: isSuspiciousIP,
-        transactionCount: rapidTransactions.length,
-        timeGap: 10
-      }
-    );
+    // const mlResponse = await axios.post(
+    //   "http://localhost:8000/predict",
+    //   {
+    //     amount: amount,
+    //     isNewIP: isSuspiciousIP,
+    //     transactionCount: rapidTransactions.length,
+    //     timeGap: 10
+    //   }
+    // );
 
-    const { fraud, riskScore } = mlResponse.data;
+    // const { fraud, riskScore } = mlResponse.data;
+
+    let fraud = false; // temporary for deployment
+    let riskScore = 0.1;
 
     // final decision
     if (fraud || riskScore > 0.7) {
