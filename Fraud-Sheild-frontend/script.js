@@ -1,3 +1,4 @@
+const BASE_URL = "https://fraud-sheild-banking.onrender.com";
 let scanner;
 let receiverAccountNumber = "";
 /* ---------------- AUTH CHECK ---------------- */
@@ -33,7 +34,7 @@ async function loginUser() {
     try {
 
         const res = await fetch(
-            "http://localhost:5000/api/auth/login",
+            BASE_URL + "/api/auth/login",
             {
                 method: "POST",
 
@@ -82,7 +83,7 @@ async function loginUser() {
 async function loadProfile() {
     try {
         const res = await fetch(
-            "http://localhost:5000/api/account/profile",
+            BASE_URL + "/api/account/profile",
             {
                 headers: {
                     Authorization: "Bearer " + token
@@ -148,7 +149,7 @@ async function openQR() {
     try {
 
         const res = await fetch(
-            "http://localhost:5000/api/account/balance",
+            BASE_URL + "/api/account/balance",
             {
                 headers: {
                     Authorization: "Bearer " + token
@@ -166,7 +167,7 @@ async function openQR() {
         const accountId = data.accountId;
 
         const qrRes = await fetch(
-            "http://localhost:5000/api/account/generate-qr/" + accountId,
+             BASE_URL + "/api/account/generate-qr/" + accountId,
             {
                 headers: {
                     Authorization: "Bearer " + token
@@ -258,7 +259,7 @@ async function openScanner() {
                 }
 
                 const res = await fetch(
-                    "http://localhost:5000/api/account/verify-qr",
+                   BASE_URL + "/api/account/verify-qr",
                     {
                         method: "POST",
                         headers: {
@@ -363,60 +364,6 @@ function closeScanner() {
 
 }
 
-// async function processTransaction(){
-
-// const amount = document.getElementById("paymentAmount").value;
-// // const type = document.getElementById("transactionType").value;
-
-// if(!amount || amount <= 0){
-// document.getElementById("paymentMessage").innerText = "Enter valid amount";
-// return;
-// }
-
-// let url = "";
-
-// if(type === "deposit"){
-// url = "http://localhost:5000/api/account/deposit";
-// }
-// else{
-// url = "http://localhost:5000/api/account/withdraw";
-// }
-
-// try{
-
-// const res = await fetch(
-// url,
-// {
-// method:"POST",
-// headers:{
-// "Content-Type":"application/json",
-// Authorization:"Bearer "+token
-// },
-// body:JSON.stringify({
-// amount:Number(amount)
-// })
-// }
-// );
-
-// const data = await res.json();
-
-// document.getElementById("paymentMessage").innerText = data.message;
-
-// setTimeout(()=>{
-
-// closePayment();
-// loadAccountBalance();
-// loadTransactionHistory();
-
-// },1500);
-
-// }catch(error){
-
-// document.getElementById("paymentMessage").innerText="Transaction failed";
-
-// }
-
-// }
 
 function closePayment(){
 
@@ -434,7 +381,7 @@ async function loadUserInfo() {
     try {
 
         const res = await fetch(
-            "http://localhost:5000/api/protected/me",
+            BASE_URL + "/api/protected/me",
             {
                 headers: {
                     Authorization: "Bearer " + token
@@ -468,7 +415,7 @@ async function loadAccountBalance() {
     try {
 
         const res = await fetch(
-            "http://localhost:5000/api/account/balance",
+            BASE_URL + "/api/account/balance",
             {
                 headers: {
                     Authorization: "Bearer " + token
@@ -509,7 +456,7 @@ async function loadTransactionHistory() {
     try {
 
         const res = await fetch(
-            "http://localhost:5000/api/account/transactions",
+            BASE_URL + "/api/account/transactions",
             {
                 headers: {
                     Authorization: "Bearer " + token
@@ -582,7 +529,7 @@ async function loadFraudAlerts() {
     try {
 
         const res = await fetch(
-            "http://localhost:5000/api/account/transactions",
+            BASE_URL + "/api/account/transactions",
             {
                 headers: {
                     Authorization: "Bearer " + token
@@ -644,7 +591,7 @@ async function loadAccountStatus() {
     try {
 
         const res = await fetch(
-            "http://localhost:5000/api/account/status",
+            BASE_URL + "/api/account/status",
             {
                 headers: {
                     Authorization: "Bearer " + token
@@ -698,7 +645,7 @@ async function depositMoney() {
     try {
 
         const res = await fetch(
-            "http://localhost:5000/api/account/deposit",
+           BASE_URL + "/api/account/deposit",
             {
                 method: "POST",
                 headers: {
@@ -755,7 +702,7 @@ async function withdrawMoney() {
     try {
 
         const res = await fetch(
-            "http://localhost:5000/api/account/withdraw",
+           BASE_URL + "/api/account/withdraw",
             {
                 method: "POST",
                 headers: {
@@ -802,7 +749,7 @@ async function createAccountIfNeeded(){
     try{
 
         const res = await fetch(
-            "http://localhost:5000/api/account/create",
+            BASE_URL + "/api/account/create",
             {
                 method:"POST",
                 headers:{
@@ -856,7 +803,7 @@ async function sendMoney() {
     try {
 
         const res = await fetch(
-            "http://localhost:5000/api/account/transfer",
+           BASE_URL + "/api/account/transfer",
             {
                 method: "POST",
                 headers: {
