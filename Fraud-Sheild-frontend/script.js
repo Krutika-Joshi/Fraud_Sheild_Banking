@@ -478,7 +478,9 @@ async function loadTransactionHistory() {
             table.innerHTML += `
                 <tr class="${rowClass}">
                     <td>${tx.type}</td>
-                    <td>₹${tx.amount}</td>
+                    <td style="color:${tx.type === 'credit' ? 'green' : 'red'}">
+                    ₹${tx.amount}
+                    </td>
                     <td>${tx.status}</td>
                     <td>${new Date(tx.createdAt).toLocaleDateString()}</td>
                 </tr>
